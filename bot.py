@@ -221,6 +221,12 @@ async def stat(ctx, *args):
             db.commit()
             cur.execute(f"INSERT INTO characters (server, player, phy, ref, sta, kno, ins, pow) VALUES ({ctx.message.guild.id}, {ctx.message.author.id}, 10, 10, 10, 10, 10, 10)")            
             db.commit()
+        if args[0] == 'uninit':
+            cur.execute(f"DELETE FROM characters WHERE {db_this_author}")
+            await ctx.send('Stats removed from db')
+            db.commit()
+            return
+
 
     if not check_stats(db_this_author):
         await ctx.send('Stats not yet initialized, please use `!stat init` to do so')
