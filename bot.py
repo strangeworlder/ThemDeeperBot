@@ -163,7 +163,6 @@ def check_stats(db_this_author):
 def update_stat(stat, args_array, db_this_author):
     # Update a single stat of the author in db.
     # + adds, - subtracts, = sets value
-    # TODO: Max and min values
     db = get_db()
     cur = db.cursor()
     args_array.remove(stat)
