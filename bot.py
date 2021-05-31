@@ -140,7 +140,7 @@ def roll(user, userstring, *commands):
             resultjoiner = ', '
         resultstring = resultstring + ''
         rollstring = rollstring + ' ' + roll + ' [' + resultstring + ']'
-    return '*' + user + '*: ' + rollstring + '\n— Total: **' + str(total) + '** —'
+    return '*' + user + '* roll: ' + rollstring + '\n— Total: **' + str(total) + '** —'
 
 def check_stats(userstring):
     db = get_db()
@@ -152,6 +152,29 @@ def check_stats(userstring):
         return False
     else:
         return True
+
+def update_stat(stat, args_array, userstring):
+    db = get_db()
+    cur = db.cursor()
+    args_array.remove(stat)
+    args_string = "".join(args_array).replace(' ', '')
+    if args_string[0] == '+':
+        args_array = list(args_string)
+        args_array.remove('+')
+        args_string = int("".join(args_array))
+        cur.execute(f"update characters set {stat} = {stat} + {args_string} {userstring}")
+    elif args_string[0] == '-':
+        args_array = list(args_string)
+        args_array.remove('-')
+        args_string = int("".join(args_array))
+        cur.execute(f"update characters set {stat} = {stat} - {args_array} {userstring}")
+    elif args_string[0] == '=' or int(args_string[0]) > 0:
+        args_array = list(args_string)
+        if args_array[0] == '=':
+            args_array.remove('=')
+        args_string = int("".join(args_array))
+        cur.execute(f"update characters set {stat} = {args_string} {userstring}")
+    db.commit()
 
 
 @bot.command(name='r', help='Simulates rolling dice.')
@@ -178,164 +201,24 @@ async def stat(ctx, *args):
         await ctx.send('Stats not yet initialized, please use `!stat init` to do so')
         return
 
+    if len(args) > 1:
+        args_array = list(args);
+        if args_array[0] == 'phy':
+            update_stat('phy', args_array, userstring)
+        elif args_array[0] == 'ref':
+            update_stat('ref', args_array, userstring)
+        elif args_array[0] == 'sta':
+            update_stat('sta', args_array, userstring)
+        elif args_array[0] == 'kno':
+            update_stat('kno', args_array, userstring)
+        elif args_array[0] == 'ins':
+            update_stat('ins', args_array, userstring)
+        elif args_array[0] == 'pow':
+            update_stat('pow', args_array, userstring)
 
-    if len(args) > 1 and args[0] == 'phy':
-        arrgay = list(args);
-        arrgay.remove('phy');
-        arrgay = "".join(arrgay).replace(' ', '')
-        if arrgay[0] == '+':
-            arrgay = list(arrgay)
-            arrgay.remove('+')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set phy = phy + {arrgay} {userstring}")
-            cur.execute(f"update characters set phy = phy + {arrgay} {userstring}")
-        elif arrgay[0] == '-':
-            arrgay = list(arrgay)
-            arrgay.remove('-')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set phy = phy - {arrgay} {userstring}")
-            cur.execute(f"update characters set phy = phy - {arrgay} {userstring}")
-        elif arrgay[0] == '=' or int(arrgay[0]) > 0:
-            arrgay = list(arrgay)
-            if arrgay[0] == '=':
-                arrgay.remove('=')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set phy = {arrgay} {userstring}")
-            cur.execute(f"update characters set phy = {arrgay} {userstring}")
-        db.commit()
-
-    elif len(args) > 1 and args[0] == 'ref':
-        arrgay = list(args);
-        arrgay.remove('ref');
-        arrgay = "".join(arrgay).replace(' ', '')
-        if arrgay[0] == '+':
-            arrgay = list(arrgay)
-            arrgay.remove('+')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set ref = ref + {arrgay} {userstring}")
-            cur.execute(f"update characters set ref = ref + {arrgay} {userstring}")
-        elif arrgay[0] == '-':
-            arrgay = list(arrgay)
-            arrgay.remove('-')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set ref = ref - {arrgay} {userstring}")
-            cur.execute(f"update characters set ref = ref - {arrgay} {userstring}")
-        elif arrgay[0] == '=' or int(arrgay[0]) > 0:
-            arrgay = list(arrgay)
-            if arrgay[0] == '=':
-                arrgay.remove('=')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set ref = {arrgay} {userstring}")
-            cur.execute(f"update characters set ref = {arrgay} {userstring}")
-        db.commit()
-
-    elif len(args) > 1 and args[0] == 'sta':
-        arrgay = list(args);
-        arrgay.remove('sta');
-        arrgay = "".join(arrgay).replace(' ', '')
-        if arrgay[0] == '+':
-            arrgay = list(arrgay)
-            arrgay.remove('+')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set sta = sta + {arrgay} {userstring}")
-            cur.execute(f"update characters set sta = sta + {arrgay} {userstring}")
-        elif arrgay[0] == '-':
-            arrgay = list(arrgay)
-            arrgay.remove('-')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set sta = sta - {arrgay} {userstring}")
-            cur.execute(f"update characters set sta = sta - {arrgay} {userstring}")
-        elif arrgay[0] == '=' or int(arrgay[0]) > 0:
-            arrgay = list(arrgay)
-            if arrgay[0] == '=':
-                arrgay.remove('=')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set sta = {arrgay} {userstring}")
-            cur.execute(f"update characters set sta = {arrgay} {userstring}")
-        db.commit()
-
-    elif len(args) > 1 and args[0] == 'kno':
-        arrgay = list(args);
-        arrgay.remove('kno');
-        arrgay = "".join(arrgay).replace(' ', '')
-        if arrgay[0] == '+':
-            arrgay = list(arrgay)
-            arrgay.remove('+')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set kno = kno + {arrgay} {userstring}")
-            cur.execute(f"update characters set kno = kno + {arrgay} {userstring}")
-        elif arrgay[0] == '-':
-            arrgay = list(arrgay)
-            arrgay.remove('-')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set kno = kno - {arrgay} {userstring}")
-            cur.execute(f"update characters set kno = kno - {arrgay} {userstring}")
-        elif arrgay[0] == '=' or int(arrgay[0]) > 0:
-            arrgay = list(arrgay)
-            if arrgay[0] == '=':
-                arrgay.remove('=')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set kno = {arrgay} {userstring}")
-            cur.execute(f"update characters set kno = {arrgay} {userstring}")
-        db.commit()
-
-    elif len(args) > 1 and args[0] == 'ins':
-        arrgay = list(args);
-        arrgay.remove('ins');
-        arrgay = "".join(arrgay).replace(' ', '')
-        if arrgay[0] == '+':
-            arrgay = list(arrgay)
-            arrgay.remove('+')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set ins = ins + {arrgay} {userstring}")
-            cur.execute(f"update characters set ins = ins + {arrgay} {userstring}")
-        elif arrgay[0] == '-':
-            arrgay = list(arrgay)
-            arrgay.remove('-')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set ins = ins - {arrgay} {userstring}")
-            cur.execute(f"update characters set ins = ins - {arrgay} {userstring}")
-        elif arrgay[0] == '=' or int(arrgay[0]) > 0:
-            arrgay = list(arrgay)
-            if arrgay[0] == '=':
-                arrgay.remove('=')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set ins = {arrgay} {userstring}")
-            cur.execute(f"update characters set ins = {arrgay} {userstring}")
-        db.commit()
-
-    elif len(args) > 1 and args[0] == 'pow':
-        arrgay = list(args);
-        arrgay.remove('pow');
-        arrgay = "".join(arrgay).replace(' ', '')
-        if arrgay[0] == '+':
-            arrgay = list(arrgay)
-            arrgay.remove('+')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set pow = pow + {arrgay} {userstring}")
-            cur.execute(f"update characters set pow = pow + {arrgay} {userstring}")
-        elif arrgay[0] == '-':
-            arrgay = list(arrgay)
-            arrgay.remove('-')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set pow = pow - {arrgay} {userstring}")
-            cur.execute(f"update characters set pow = pow - {arrgay} {userstring}")
-        elif arrgay[0] == '=' or int(arrgay[0]) > 0:
-            arrgay = list(arrgay)
-            if arrgay[0] == '=':
-                arrgay.remove('=')
-            arrgay = int("".join(arrgay))
-            print(f"update characters set pow = {arrgay} {userstring}")
-            cur.execute(f"update characters set pow = {arrgay} {userstring}")
-        db.commit()
-
-
-    #cur.execute(f"insert into characters (server, player, phy, ref, sta, kno, ins, pow) VALUES ({ctx.message.guild.id}, {ctx.message.author.id}, 7, 9, 12, 14, 16, 18)")
-
-    #mydb.commit()
     cur.execute(f"SELECT * FROM characters {userstring}")
     stats = cur.fetchone()
 
-    await ctx.send('Stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
+    await ctx.send(f'*{ctx.message.author.name}* stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
 
 bot.run(TOKEN)
