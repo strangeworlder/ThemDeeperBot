@@ -205,7 +205,10 @@ async def r(ctx, *args):
     # TODO: Handle response messages from roll here
     db_this_author = get_db_this_author(ctx)
     roll_result = roll(db_this_author, args)
-    string = '*' + ctx.message.author.name + '* roll: ' + roll_result[0] + '\n— Total: **' + str(roll_result[1]) + '** —'
+    namestring = ctx.message.author.name
+    if ctx.message.author.nick is not None:
+        namestring = ctx.message.author.nick
+    string = '*' + namestring + '* roll:\n' + roll_result[0] + '\n— Total: **' + str(roll_result[1]) + '** —'
     await ctx.send(string)
 
 @bot.command(name='stat', help='View and adjust your stats.')
@@ -251,8 +254,10 @@ async def stat(ctx, *args):
 
     cur.execute(f"SELECT * FROM characters WHERE {db_this_author}")
     stats = cur.fetchone()
-
-    await ctx.send(f'*{ctx.message.author.name}* stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
+    namestring = ctx.message.author.name
+    if ctx.message.author.nick is not None:
+        namestring = ctx.message.author.nick
+    await ctx.send(f'*{namestring}* stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="!r and !stat"))
