@@ -57,7 +57,7 @@ def get_stat_roll(db_this_author, stat):
     else:
         return ['d20']
 
-def roll(user, db_this_author, *commands):
+def roll(db_this_author, *commands):
     # Returns the result of the roll
     # TODO: Return an array of values, handle the printing outside this function
     str1 = ''
@@ -146,7 +146,7 @@ def roll(user, db_this_author, *commands):
             resultjoiner = ', '
         resultstring = resultstring + ''
         rollstring = rollstring + ' ' + roll + ' [' + resultstring + ']'
-    return '*' + user + '* roll: ' + rollstring + '\n— Total: **' + str(total) + '** —'
+    return [rollstring, total]
 
 def check_stats(db_this_author):
     # a check to see if the author has initialized stats in db
@@ -204,8 +204,9 @@ def get_db_this_author(ctx):
 async def r(ctx, *args):
     # TODO: Handle response messages from roll here
     db_this_author = get_db_this_author(ctx)
-
-    await ctx.send(roll(ctx.message.author.name, db_this_author, args))
+    roll_result = roll(db_this_author, args)
+    string = '*' + ctx.message.author.name + '* roll: ' + roll_result[0] + '\n— Total: **' + str(roll_result[1]) + '** —'
+    await ctx.send(string)
 
 @bot.command(name='stat', help='View and adjust your stats.')
 async def stat(ctx, *args):
@@ -219,7 +220,8 @@ async def stat(ctx, *args):
         if args[0] == 'init':
             cur.execute(f"DELETE FROM characters WHERE {db_this_author}")
             db.commit()
-            cur.execute(f"INSERT INTO characters (server, player, phy, ref, sta, kno, ins, pow) VALUES ({ctx.message.guild.id}, {ctx.message.author.id}, 10, 10, 10, 10, 10, 10)")            
+            vals = [roll(db_this_author, ['3d6'])[1], roll(db_this_author, ['3d6'])[1], roll(db_this_author, ['3d6'])[1], roll(db_this_author, ['3d6'])[1], roll(db_this_author, ['3d6'])[1], roll(db_this_author, ['3d6'])[1]]
+            cur.execute(f"INSERT INTO characters (server, player, phy, ref, sta, kno, ins, pow) VALUES ({ctx.message.guild.id}, {ctx.message.author.id}, {int(vals[0])}, {int(vals[1])}, {int(vals[2])}, {int(vals[3])}, {int(vals[4])}, {int(vals[5])})")            
             db.commit()
         if args[0] == 'uninit':
             cur.execute(f"DELETE FROM characters WHERE {db_this_author}")
