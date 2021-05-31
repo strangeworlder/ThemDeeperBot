@@ -2,6 +2,7 @@
 import os
 import random
 import pymysql
+import discord
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -251,5 +252,8 @@ async def stat(ctx, *args):
     stats = cur.fetchone()
 
     await ctx.send(f'*{ctx.message.author.name}* stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
-
+@bot.event
+async def on_ready():
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="!r and !stat"))
+    print("Bot is ready!")
 bot.run(TOKEN)
