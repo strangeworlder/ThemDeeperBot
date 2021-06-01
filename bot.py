@@ -14,11 +14,18 @@ bot = commands.Bot(command_prefix='!')
 
 def get_db():
     # database connector
-    # TODO: Port to environmental variable
+    # TODO: Port port to environmental variable
     db=pymysql.connect(host=os.getenv('MYSQL_HOST'), port=3306, user=os.getenv('MYSQL_USER'), passwd=os.getenv('MYSQL_PASSWORD'), db=os.getenv('MYSQL_DATABASE'))
 
     return db
 
+def is_integer(n):
+    try:
+        float(n)
+    except ValueError:
+        return False
+    else:
+        return float(n).is_integer()
 
 def get_stat_roll(db_this_author, stat):
     # returns the roll array for the user's particular stat if between 0 and 18
@@ -43,6 +50,8 @@ def get_stat_roll(db_this_author, stat):
     else:   
         return ['d20']
     myresult = cur.fetchone()
+    db.close()
+
     stat_value = int(myresult[0])
     if stat_value < 7 and stat_value >= 0:
         return ['d20', 'd']
@@ -59,17 +68,24 @@ def get_stat_roll(db_this_author, stat):
 
 def roll(db_this_author, *commands):
     # Returns the result of the roll
-    # TODO: Return an array of values, handle the printing outside this function
+    # TODO: multiples and static adds
     str1 = ''
     adv = False
     disadv = False
+    roll = ''
+    joiner = ''
+    rollstring = ''
+    total = 0
+
     cmds = list(commands[0])
     cmds = [get_stat_roll(db_this_author, 'pow') if x=='pow' else get_stat_roll(db_this_author, 'ins') if x=='ins' else get_stat_roll(db_this_author, 'kno') if x=='kno' else get_stat_roll(db_this_author, 'sta') if x=='sta' else get_stat_roll(db_this_author, 'ref') if x=='ref' else get_stat_roll(db_this_author, 'phy') if x=='phy' else [x] for x in cmds]
+
     flat_list = []
     for sublist in cmds:
         for item in sublist:
             flat_list.append(item)
     cmds = flat_list
+
     if 'a' in cmds:
         adv = True
         cmds.remove('a')
@@ -91,22 +107,20 @@ def roll(db_this_author, *commands):
     if disadv == True and adv == True:
         disadv = False
         adv = False
+
     parse_string = str1.join(cmds)
     dice = parse_string.split('+')
-    roll = ''
-    joiner = ''
-    rollstring = ''
-    total = 0
+
     for die in dice:
         if die[0] == 'd':
             die = '1' + die
         [number_of_dice, number_of_sides] = die.split('d')
         if total == 0 and adv:
             number_of_dice = str(int(number_of_dice)+1)
-            roll = f'{number_of_dice}d{number_of_sides}(adv)'
+            roll = f'{number_of_dice}d{number_of_sides}:small_red_triangle:'
         elif total == 0 and disadv:
             number_of_dice = str(int(number_of_dice)+1)
-            roll = f'{number_of_dice}d{number_of_sides}(dis)'
+            roll = f'{number_of_dice}d{number_of_sides}:small_red_triangle_down:'
         else:
             roll = f'{joiner}{number_of_dice}d{number_of_sides}'
         joiner = ' + '
@@ -154,6 +168,7 @@ def check_stats(db_this_author):
     cur = db.cursor()
     cur.execute(f"SELECT * FROM characters WHERE {db_this_author}")
     myresult = cur.fetchone()
+    db.close()
 
     if myresult is None or len(myresult) < 1:
         return False
@@ -169,31 +184,44 @@ def update_stat(stat, args_array, db_this_author):
     args_string = "".join(args_array).replace(' ', '')
     cur.execute(f"SELECT {stat} FROM characters WHERE {db_this_author}")
     stats = cur.fetchone()
+
     if args_string[0] == '+':
         args_array = list(args_string)
         args_array.remove('+')
-        args_string = int("".join(args_array))
-        if int(stats[0]) + args_string > 18:
-            args_string = 18 - int(stats[0])
-        cur.execute(f"UPDATE characters SET {stat} = {stat} + {args_string} WHERE {db_this_author}")
+        args_string = "".join(args_array)
+        if is_integer(args_string):
+            args_string = int(args_string)
+            if int(stats[0]) + args_string > 18:
+                args_string = 18 - int(stats[0])
+            cur.execute(f"UPDATE characters SET {stat} = {stat} + {args_string} WHERE {db_this_author}")
+            db.commit()
+
     elif args_string[0] == '-':
         args_array = list(args_string)
         args_array.remove('-')
-        args_string = int("".join(args_array))
-        if int(stats[0]) - args_string < 0:
-            args_string = int(stats[0])
-        cur.execute(f"UPDATE characters SET {stat} = {stat} - {args_string} WHERE {db_this_author}")
-    elif args_string[0] == '=' or int(args_string[0]) > 0:
+        args_string = "".join(args_array)
+        if is_integer(args_string):
+            args_string = int(args_string)
+            if int(stats[0]) - args_string < 0:
+                args_string = int(stats[0])
+            cur.execute(f"UPDATE characters SET {stat} = {stat} - {args_string} WHERE {db_this_author}")
+            db.commit()
+
+    elif args_string[0] == '=' or is_integer(args_string):
         args_array = list(args_string)
         if args_array[0] == '=':
             args_array.remove('=')
-        args_string = int("".join(args_array))
-        if args_string < 0:
-            args_string = 0
-        if args_string > 18:
-            args_string = 18
-        cur.execute(f"UPDATE characters SET {stat} = {args_string} WHERE {db_this_author}")
-    db.commit()
+        args_string = "".join(args_array)
+        if is_integer(args_string):
+            args_string = int(args_string)
+            if args_string < 0:
+                args_string = 0
+            if args_string > 18:
+                args_string = 18
+            cur.execute(f"UPDATE characters SET {stat} = {args_string} WHERE {db_this_author}")
+            db.commit()
+    db.close()
+
 
 def get_db_this_author(ctx):
     # returns the part of the query that defines the current query maker (server/author)
@@ -208,7 +236,7 @@ async def r(ctx, *args):
     namestring = ctx.message.author.name
     if ctx.message.author.nick is not None:
         namestring = ctx.message.author.nick
-    string = '*' + namestring + '* roll:\n' + roll_result[0] + '\n— Total: **' + str(roll_result[1]) + '** —'
+    string = ':game_die: **' + namestring + '** roll:\n' + roll_result[0] + '\n— Total: **' + str(roll_result[1]) + '** —'
     await ctx.send(string)
 
 @bot.command(name='stat', help='View and adjust your stats.')
@@ -251,13 +279,16 @@ async def stat(ctx, *args):
             update_stat('ins', args_array, db_this_author)
         elif args_array[0] == 'pow':
             update_stat('pow', args_array, db_this_author)
+        else:
+            return
 
     cur.execute(f"SELECT * FROM characters WHERE {db_this_author}")
     stats = cur.fetchone()
+    db.close()
     namestring = ctx.message.author.name
     if ctx.message.author.nick is not None:
         namestring = ctx.message.author.nick
-    await ctx.send(f'*{namestring}* stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
+    await ctx.send(f':memo: **{namestring}** stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="!r and !stat"))
