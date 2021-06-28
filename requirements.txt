@@ -10,3 +10,5 @@ protobuf==3.17.1
 python-dotenv==0.17.1
 typing-extensions==3.10.0.0
 pymysql==1.0.2
+discord-py-slash-command==2.0.4
+cryptography==3.4.7

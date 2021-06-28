@@ -6,11 +6,12 @@ import discord
 
 from discord.ext import commands
 from dotenv import load_dotenv
+from discord_slash import SlashCommand, SlashContext
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 def get_db():
     # database connector
@@ -20,6 +21,7 @@ def get_db():
     return db
 
 def is_integer(n):
+    # variation of integer that also checks if a string is an integer string
     try:
         float(n)
     except ValueError:
@@ -227,6 +229,10 @@ def get_db_this_author(ctx):
     # returns the part of the query that defines the current query maker (server/author)
     # TODO: make sure no bad stuff gets to query string (should be ok, but...)
     return f"server = {ctx.message.guild.id} AND player = {ctx.message.author.id}"
+def get_slash_db_this_author(ctx):
+    # returns the part of the query that defines the current query maker (server/author)
+    # TODO: make sure no bad stuff gets to query string (should be ok, but...)
+    return f"server = {ctx.guild_id} AND player = {ctx.author_id}"
 
 @bot.command(name='r', help='Simulates rolling dice.')
 async def r(ctx, *args):
@@ -289,8 +295,25 @@ async def stat(ctx, *args):
     if ctx.message.author.nick is not None:
         namestring = ctx.message.author.nick
     await ctx.send(f':memo: **{namestring}** stats:\nPhy: **' + str(stats[3]) + '**, Ref: **' + str(stats[4]) + '**, Sta: **' + str(stats[5]) + '**, Kno: **' + str(stats[6]) + '**, Ins: **' + str(stats[7]) + '**, Pow: **' + str(stats[8]) + '**, ')
+
+slash = SlashCommand(bot, sync_commands=True)
+guilds = os.getenv('GUILD_IDS').split(',')
+for i in range(0, len(guilds)):
+    guilds[i] = int(guilds[i])
+
+@slash.slash(name="r", guild_ids=guilds)
+async def _r(ctx: SlashContext, dice):
+    db_this_author = get_slash_db_this_author(ctx)
+    roll_result = roll(db_this_author, dice.split())
+    namestring = ctx.author.name
+    if ctx.author.nick is not None:
+        namestring = ctx.author.nick
+    string = ':game_die: **' + namestring + '** roll:\n' + roll_result[0] + '\n— Total: **' + str(roll_result[1]) + '** —'
+    await ctx.send(string)
+
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="!r and !stat"))
     print("Bot is ready!")
+
 bot.run(TOKEN)
