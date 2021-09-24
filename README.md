@@ -1,5 +1,7 @@
 # Them Deeper Bot
 
+Read more about Them Deeper Bones at https://themdeeperbones.com
+
 ## Installation
 
 `pip3 install -r requirements.txt`
