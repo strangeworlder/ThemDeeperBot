@@ -55,9 +55,7 @@ def get_stat_roll(db_this_author, stat):
     db.close()
 
     stat_value = int(myresult[0])
-    if stat_value < 7 and stat_value >= 0:
-        return ['d20', 'd']
-    elif stat_value < 11:
+    if stat_value < 10 and stat_value >= 0:
         return ['d20']
     elif stat_value < 15:
         return ['d20', '+', 'd4']
